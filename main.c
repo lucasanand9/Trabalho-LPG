@@ -5,7 +5,7 @@
 //#define M 10
 //#define N 8
 
-void menu();
+void menu(int *cont);
 void inserirNovoConjunto(int *cont, int m); //1
 void inserirDados(int m, int n, int matriz[m][n], int *cont);//2
 void deletarConjunto(int m, int n, int matriz[m][n], int conj, int *cont);//3
@@ -15,6 +15,7 @@ void mostrarUmConjunto(int m, int n, int matriz[m][n], int conj, int *cont);//6
 void mostrarConjuntos(int m, int n, int matriz[m][n], int *cont);//7
 void buscaValor(int m, int n, int matriz[m][n], int chave, int *cont);//8
 int verificacao(int linha,int *cont);
+int tamConj(int a[], int n);
 
 int main(){
     int Imenu;
@@ -30,7 +31,7 @@ int main(){
     preencher_matriz(M, N, m, 0);
     
     do{
-        menu();
+        menu(&cont);
         scanf("%i", &Imenu);
         switch (Imenu){
             case 1:
@@ -88,9 +89,10 @@ int main(){
     //fazer o switch no final!
 }
 
-void menu(){
+void menu(int *cont){
     printf("\n================================================\n");
     printf("Qual sua escolha para hoje?\n");
+    printf("Você tem %i conjuntos criados\n", *cont);
     printf("(1) Criar um novo conjunto\n");
     printf("(2) Inserir dados em um conjunto\n");
     printf("(3) Remover um conjunto\n");
@@ -122,6 +124,11 @@ void inserirDados(int m, int n, int matriz[m][n], int *cont){
     }
        
     int a;
+    if(matriz[m][n-1] != 0){
+    	printf("Voce chegou no limite desse conjunto\n");
+	return;
+    }
+
 
     for(int i = busca_seq_recursiva(matriz[m], n, 0); i < n; i++){ //busca para identificar o primeiro 0
         printf("Caso queira parar, digite 0:\n");
@@ -147,86 +154,76 @@ void deletarConjunto(int m, int n, int matriz[m][n], int conj, int *cont){
         return;
     }
     int aux;
-    for (int i = conj; i <= *cont; i++){
+    for (int i = conj; i+1 < *cont; i++){
          for (int j = 0; j < n; j++){
             aux = matriz[i+1][j];
             matriz[i][j] = aux;
          }
     }
-    *cont = *cont - 1;  
+    for (int j = 0; j < n; j++){
+            matriz[*cont-1][j] = 0;
+         }
+    //zerar a linha *cont-1
+    *cont -= 1;  
+}
+
+int tamConj(int a[], int n){
+	int i = 0;
+	for(i = 0; i< n && a[i] != 0; i++);
+	return i;
 }
 
 void uniaoConjuntos(int c1, int c2,int m, int n,int matriz[m][n],int *cont){
-    int aux = *cont;
-    if (verificacao(c1, cont)){
-        printf("Conjunto: %i", c1);
-        return;
-    }
-    if (verificacao(c2, cont)){
-        printf("Conjunto: %i", c2);
-        return;
-    }
-    
-    int sizeC1, sizeC2, sizeC3;
-        if ( busca_seq_recursiva(matriz[c1], n, 0) == -1){
-                sizeC1 = n;
-            }else{
-                sizeC2 = busca_seq_recursiva(matriz[c1], n, 0);
-            }
-            if ( busca_seq_recursiva(matriz[c2], n, 0) == -1){
-                sizeC2 = n;
-            }else{
-                sizeC2 = busca_seq_recursiva(matriz[c2], n, 0);
-            }
-        
-        int c3 = *cont;
-        int vetor_criado[sizeC1 + sizeC2]; //vetor novo
-        prencher_vetor(vetor_criado, sizeC1 + sizeC2, 0);
-        int i;
-        for(i=0;i<n;i++){
-            vetor_criado[i] = matriz[c1][i];
-        }
+	if(verificacao(c1, cont)){
+		return;
+	}
+	if(verificacao(c2, cont)){
+		return;
+	}
+	
+	int sizeC1, sizeC2;
+	sizeC1 = tamConj(matriz[c1], n);
+	sizeC2 = tamConj(matriz[c2], n);
+	int sizeC3 = sizeC1 + sizeC2;
+	for(int i = 0; i < sizeC2; i++){
+		if(busca_seq_recursiva(matriz[c1], n, matriz[c2][i]) != -1){
+			sizeC3--;
+		}
+	}
+	if(sizeC3 > n){
+		printf("A união desses dois conjuntos é maior que o tamanho maximo permitido\n");
+		return;
+	}
+	int aux = *cont;
+	inserirNovoConjunto(cont, m);
+	if(aux == *cont){
+		printf("Saida 1\n");
+	       	return;
+	}
+	int i = 0;
+	for(i = 0; i < sizeC1; i++){
+		printf("Saida 2\n");
+		matriz[*cont-1][i] = matriz[c1][i];
+		printf("[%i] matriz[%i] = %i\n", *cont, i, matriz[*cont-1][i]);
+	}
+	for(int j = 0; j < sizeC2; j++){
+		printf("Saida 4\n");
+		if(busca_seq_recursiva(matriz[c1], n, matriz[c2][j]) == -1){
+			printf("Saida 4.1\n");
+			matriz[*cont-1][i] = matriz[c2][j];
+			printf("[%i] matriz[%i] = %i\n", *cont, i, matriz[*cont-1][i]);
+			i++;
+		}
+	}
 
-        //duas variaveis?
-        for(int j=0;j<sizeC1 + sizeC2;j++){
-            //nesse if pode ter um erro
-            if (busca_seq_recursiva(matriz[c1], n, matriz[c2][j]) != -1){ //achar repetido
-                vetor_criado[i+1] = matriz[c2][j+sizeC1];
-            }else{
-                i = i - 1;
-            }
-        }
 
-    if ( busca_seq_recursiva(vetor_criado, n, 0) == -1){
-                sizeC3 = n;
-            }else{
-                sizeC3 = busca_seq_recursiva(vetor_criado, n, 0);
-            }
-    for(int i=0;i<n;i++){ //verificacao se vetor cabe depois de apagar os repetidos
-        if(sizeC3 <= n){
-            inserirNovoConjunto(cont, m);
-                if(aux == *cont){
-                    printf("Nao eh possivel criar um novo conjunto\n");
-                    return;
-                }
-            for(int j = 0; j < n; j++){
-                matriz[c3][j] = vetor_criado[j];
-            }
-        }
-        else{
-            printf("A uniao dos vetores nao eh permitida porque extrapola a quantidade de colunas da matriz!");
-        }
-    }
 }
-
 void interseccaoConjutos(int c1, int c2,int m, int n, int matriz[m][n],int *cont){
    int aux = *cont;
     if (verificacao(c1, cont)){
-        printf("Conjunto: %i", c1);
         return;
     }
     if (verificacao(c2, cont)){
-        printf("Conjunto: %i", c2);
         return;
     }
     inserirNovoConjunto(cont, m);
@@ -274,19 +271,25 @@ void mostrarConjuntos(int m, int n, int matriz[m][n], int *cont){
 
 void buscaValor(int m, int n, int matriz[m][n], int chave, int *cont){
     printf("Conjuntos que contem o valor: ");
+    int nenhum=0;
     for (int i = 0; i < *cont; i++){
         if (busca_seq_recursiva(matriz[i], n, chave) != -1 && chave != 0){
             printf("%i ", i);
+            nenhum = 1;
         }else{
-            printf("Nenhum conjuto contem esse numero");
+            if(nenhum == 0)
+                nenhum = -1;
         }
     }
-    printf("\n");
+    if(nenhum == -1){
+        printf("Nenhum conjunto contem esse numero");
+        printf("\n");
+    }
 }
 
 int verificacao(int linha, int *cont){
     if (linha+1 > *cont){
-        printf("\nInfelizmente esse conjunto nao existe :(\n");
+        printf("\nAlgum dos conjunto nao exite\n");
         return 1;
     }else{
         return 0;
